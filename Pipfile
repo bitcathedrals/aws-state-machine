@@ -10,7 +10,7 @@ boto3 = "1.24.5"
 [dev-packages]
 pytest = "*"
 black = "*"
-awscli = "*"
+awscliv2 = "*"
 
 [requires]
 python_version = "3.10.5"
