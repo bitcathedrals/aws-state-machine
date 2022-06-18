@@ -22,13 +22,17 @@ def dynamo_machines():
 
     return machine_table
 
+class MachineStorageError(Exception):
+    def __init__(self, machine, system):
+        super().__init__("machine: %s" % machine, "system: %s" % system)
+
 
 class StateMachine:
     machines = None
     lazy = False
 
     machine_key = None
-    machine_group = None
+    machine_system = None
 
     state = None
 
@@ -36,17 +40,25 @@ class StateMachine:
 
     def fetch_or_create(self, state):
         fetched = self.machines.get_item(Key={primaryKeyName: self.machine_key,
-                                              sortKeyName: self.machine_group})
+                                              sortKeyName: self.machine_system})
         if not fetched:
-            fetched = {'state': state,
-                       'data': {state, {}}}
+            new_data = {'machine': self.machine_key,
+                       'system': self.machine_system,
+                       'state': state,
+                       'data': {state: {}}}
 
-            response = self.machines.put_item(Item=fetched)
+            response = self.machines.put_item(Item=new_data)
+
+            if not response:
+                raise MachineStorageError(self.machine_key, self.machine_system)
+
+            self.loaded = new_data['data'][state]
 
         else:
             fetched = json.loads(fetched)
+            self.loaded = fetched['data'][state]
 
-        return fetched['data'][fetched[state]]
+        return self.loaded
 
 
     def persist(self, Force=False)
@@ -54,11 +66,20 @@ class StateMachine:
         if DeepDiff(self.loaded, self.__dict__):
             dirty = True
 
-        if Force or (self.lazy is False and dirty is True): 
-            response = self.machines.update_item(Key={'state': self.state},
-                                                 ExpressionAttributeValues={'state': self.state,
-                                                                            'data': {self.state: self.__dict__}})
-           self.loaded['data'][self.state] = self.__dict__
+        if Force or (self.lazy is False and dirty is True):
+            updated_data = self.loaded
+            updated_data.update(self.__dict__)
+
+            response = self.machines.update_item(Key={'machine': self.machine_key},
+                                                 UpdateExpression="SET #state = :state, #data[\"%\"] = :data" % self.state,
+                                                 ExpressionAttributeValues={':state': self.state,
+                                                                            ':data': updated_data},
+                                                 ReturnValues='UPDATED_NEW')
+
+            if not response and updated_data:
+                raise MachineStorageError(self.machine_key, self.machine_system)
+
+           self.loaded[self.state] = updated_data
 
 
     def flush(self):
