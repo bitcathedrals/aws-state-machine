@@ -4,21 +4,24 @@ verify_ssl = true
 name = "pypi"
 
 [[source]]
-url = "http://localhost:8080/simple"
+url = "http://bitcathedrals.com/simple"
 verify_ssl = false
-name = "local"
+name = "bitcathedrals"
+
+[global]
+trusted-host = "bitcathedrals.com"
 
 [packages]
-json-decorator = {version = "*", index = "local"}
-
 boto3 = "1.24.5"
+
+cfconfig = {version = "0.6.0", index = "bitcathedrals"}
 deepdiff = "*"
 
 [dev-packages]
 pytest = "*"
 black = "*"
 awscliv2 = "*"
-setuptools = "*"
+build = "*"
 
 [requires]
 python_version = "3.10"

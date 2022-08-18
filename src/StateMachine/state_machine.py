@@ -2,25 +2,108 @@
 # aws state machine
 #
 
-from boto3 import resource Table
-from json import loads dumps
+import boto3
+
+from json import loads, dumps
 from copy import deepcopy
 from deepdiff import DeepDiff 
 
-TABLE = 'machines'
+from functools import cached_property
+
 REGION = 'us-west-2'
 
-dynamodb_resource = None
-machine_table = None
+CAPACITY = 0
 
-def dynamo_machines():
-    if dynamodb_resource is None:
-        dynamodb_resource = boto3.resource('dynamodb', region_name=REGION)
+if CAPACITY == 0:
+    BILLING_MODE = 'PAY_PER_REQUEST'
+else:
+    BILLING_MODE = 'PROVISIONED'
 
-    if machine_table is None:
-        machine_table=dynamodb_resource.Table(TABLE)
+class StateMachine:
+    region = REGION
 
-    return machine_table
+    @property
+    def credentials(self):
+        sts_client = boto3.client('sts')
+
+        assume = sts_client.assume_role(
+            RoleArn=self.role,
+            RoleSessionName="StateMachineSession"
+        )
+
+        return assume['Credentials']
+
+    @cached_property
+    def dynamo(self):
+        creds = self.credentials
+            
+        return boto3.resource('dynamodb',
+            aws_access_key_id=creds['AccessKeyId'],
+            aws_secret_access_key=creds['SecretAccessKey'],
+            aws_session_token=creds['SessionToken']
+        )
+
+    def create_machine_table(self, environment, machine, **kwargs):
+        definition = {
+            'AttributeDefinitions': [
+                {
+                    'AttributeName': 'instance',
+                    'AttributeType': 'S'
+                },
+                {
+                    'AttributeName': 'timestamp',
+                    'AttributeType': 'S'    
+                },
+                {
+                    'AttributeName': 'state',
+                    'AttributeType': 'S'
+                }
+            ],
+            'TableName': machine + "_" + environment,
+            'KeySchema': [
+                {
+                    'AttributeName': 'instance',
+                    'KeyType': 'HASH'
+                }
+            ],
+            'BillingMode': BILLING_MODE
+        }
+
+    if BILLING_MODE == 'PROVISIONED':
+        definition['ProvisionedThroughput'] = {
+            'ReadCapacityUnits': CAPACITY,
+            'WriteCapacityUnits': CAPACITY,
+        }
+
+    if kwargs:
+        definition['Tags'] = []
+
+        for tag_key, tag_value in kwargs:
+            definition['Tags'].append({
+                'Key': tag_key,
+                'Value': tag_value,
+            })
+
+
+    def __init__(self, machine, profile, region=REGION):
+        session_default = {
+            'profile_name': profile
+        }
+            
+        self.region = region
+
+        boto3.setup_default_session(**session_default)
+
+
+
+
+        if dynamodb_resource is None:
+
+            machine_table=dynamodb_resource.Table(TABLE)
+
+        return machine_table
+
+        response = dynamodb_client.create_table(
 
 class MachineStorageError(Exception):
     def __init__(self, machine, system):
@@ -61,7 +144,7 @@ class StateMachine:
         return self.loaded
 
 
-    def persist(self, Force=False)
+    def persist(self, Force=False):
         dirty = False
         if DeepDiff(self.loaded, self.__dict__):
             dirty = True
