@@ -15,7 +15,6 @@ trusted-host = "python.bitcathedrals.com"
 boto3 = "1.24.5"
 
 cfconfig = {version = "0.6.0", index = "bitcathedrals"}
-deepdiff = "*"
 
 [dev-packages]
 pytest = "*"
