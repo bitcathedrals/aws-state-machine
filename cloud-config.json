@@ -1,5 +1,4 @@
 {
-    "env": "dev",
-    "stacks": ["test-stack"],
-    "ignore": ["BuildUserAccessSecret", "BuildUserAccessId"],
+    "stacks": ["state-machine-stack"],
+    "region": "us-west-2"
 }
