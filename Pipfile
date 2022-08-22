@@ -4,12 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [[source]]
-url = "http://bitcathedrals.com/simple"
+url = "http://python.bitcathedrals.com/simple"
 verify_ssl = false
 name = "bitcathedrals"
 
 [global]
-trusted-host = "bitcathedrals.com"
+trusted-host = "python.bitcathedrals.com"
 
 [packages]
 boto3 = "1.24.5"

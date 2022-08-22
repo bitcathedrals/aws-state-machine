@@ -61,7 +61,7 @@ case $1 in
     ;;
     "python")
         shift
-        PYTHONPATH="$PYTHONPATH:src:CloudFormation:" pyenv exec python $@
+        PYTHONPATH="$PYTHONPATH:src" pyenv exec python $@
     ;;
     "run")
         shift
@@ -103,7 +103,8 @@ case $1 in
         pyenv rehash
     ;;
     "push")
-        cp dist/* ~/coding/python-packages/simple/
+        test -d ~/coding/python-packages/simple/StateMachine || mkdir -p ~/coding/python-packages/simple/StateMachine
+        cp dist/* ~/coding/python-packages/simple/StateMachine/
     ;;
     "list")
         pyenv exec python -m pipenv graph
