@@ -26,33 +26,33 @@ class MachineStorageError(Exception):
                                                                          machine_instance,
                                                                          error))
 
-def state(state, other_states=[]):
+def state(states=[]):
 
-    def machine_generator(handler):
+    def state_handler(handler):
 
         @wraps(handler)
-        def machine(self, state, **kwargs):
-            value, state, data = handler(self, state, **kwargs)
+        def machine_state(self, *args, **kwargs):
+            this_state = handler.__name__
 
-            if state in other_states:
-                next = getattr(self, state)
+            self.switch_new_state(this_state)
+            
+            value, next_state, data = handler(self, *args, **kwargs)
 
-                if next:
-                    self.__dict__ = data
-                    self.state = state 
+            if next_state in states:
+                next_handler = getattr(self, next_state)
 
-                    next_value, next_state, next_data = next(self, state, **kwargs)
+                if next_handler:
+                    value, final_state, data = next_handler(self, *args, **kwargs)
 
-                    return next_value, next_state, next_data
-
+                    return value, final_state, data
                 else:
-                    raise ValueError('StateMachine -> Unknown state %s' % state)
+                    raise ValueError('StateMachine -> Unhandled state %s' % self._state)
             else:
-                raise ValueError('StateMachine -> handler %s cannot handle state %s' % (str(handler), state))
+                raise ValueError('StateMachine -> handler %s cannot handle state %s' % (self._state, next_state))
     
-        return machine
+        return machine_state
 
-    return machine_generator
+    return state_handler
 
 
 class StateMachine:
