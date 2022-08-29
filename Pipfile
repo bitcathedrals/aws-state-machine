@@ -12,15 +12,14 @@ name = "bitcathedrals"
 trusted-host = "python.bitcathedrals.com"
 
 [packages]
-boto3 = "1.24.5"
+boto3 = "1.24"
 
 DeepDiff = "*"
 
-cfconfig = {version = "<1.0.0", index = "bitcathedrals"}
+cfconfig = {version = "<1.0", index = "bitcathedrals"}
 
 [dev-packages]
 pytest = "*"
-black = "*"
 awscliv2 = "*"
 build = "*"
 
